@@ -70,7 +70,7 @@ def sieve_flags(limit):
     for prime in range(2, isqrt(limit) + 1):
         if not flags[prime]:
             continue
-        for multiple in range(prime * prime, limit, prime):
+        for multiple in range(prime * prime, limit + 1, prime):
             flags[multiple] = False
     return flags
 
@@ -85,7 +85,7 @@ def prime_count(limit):
     _require_bound(limit, "上界")
     flags = sieve_flags(limit)
     total = 0
-    for value in range(2, limit):
+    for value in range(2, limit + 1):
         if flags[value]:
             total += 1
     return total
@@ -94,7 +94,7 @@ def prime_count(limit):
 def is_prime(value):
     """判断单个数是不是素数。"""
     _require_int(value, "待判定数")
-    if value < 1:
+    if value < 2:
         return False
     if value % 2 == 0:
         return value == 2
@@ -114,7 +114,8 @@ def smallest_prime_factors(limit):
         if table[prime] != prime:
             continue
         for multiple in range(prime * prime, limit + 1, prime):
-            table[multiple] = prime
+            if table[multiple] == multiple:
+                table[multiple] = prime
     return table
 
 
@@ -134,6 +135,8 @@ def factorize(value):
                 exponent += 1
             factors.append((divisor, exponent))
         divisor += 1 if divisor == 2 else 2
+    if rest > 1:
+        factors.append((rest, 1))
     return factors
 
 
@@ -144,7 +147,7 @@ def divisors(value):
         raise SieveError("待求数必须为正: %r" % (value,))
     result = [1]
     for prime, exponent in factorize(value):
-        powers = [prime ** power for power in range(exponent)]
+        powers = [prime ** power for power in range(exponent + 1)]
         result = [factor * power for factor in result for power in powers]
     return sorted(result)
 
@@ -156,7 +159,7 @@ def segmented_primes(low, high):
     if low > high:
         raise SieveError("区间下界不能高于上界: %r > %r" % (low, high))
     flags = [True] * (high - low + 1)
-    base = primes_up_to(isqrt(low))
+    base = primes_up_to(isqrt(high))
     for prime in base:
         start = max(prime * prime, ((low + prime - 1) // prime) * prime)
         for multiple in range(start, high + 1, prime):
@@ -173,5 +176,5 @@ def count_primes_between(low, high):
     _require_bound(high, "区间上界")
     if low > high:
         raise SieveError("区间下界不能高于上界: %r > %r" % (low, high))
-    below = prime_count(low) if low >= 1 else 0
+    below = prime_count(low - 1) if low >= 1 else 0
     return prime_count(high) - below
